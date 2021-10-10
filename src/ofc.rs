@@ -16,19 +16,19 @@ enum Suit {
 
 #[derive(Debug, EnumIter, Clone, Copy, PartialEq, Eq, Hash)]
 enum DeckCard {
-    Two = 2,
-    Three = 3,
-    Four = 4,
-    Five = 5,
-    Six = 6,
-    Seven = 7,
-    Eight = 8,
-    Nine = 9,
-    Ten = 10,
-    Jack = 11,
-    Queen = 12,
-    King = 13,
-    Ace = 14,
+    Two,
+    Three,
+    Four,
+    Five,
+    Six,
+    Seven,
+    Eight,
+    Nine,
+    Ten,
+    Jack,
+    Queen,
+    King,
+    Ace,
 }
 
 #[derive(Debug, Clone)]
@@ -75,12 +75,6 @@ impl DeckCard {
             _ => Err(String::from(" -- no such deck card"))
         }
     }
-
-    fn get_pair() -> HashMap<DeckCard, i32> {
-        let mut z = HashMap::new();
-        z.insert(DeckCard::King, 1);
-        z
-    }
 }
 
 impl Suit {
@@ -117,17 +111,94 @@ impl Combination {
 
     fn from_vec_cards(cards: &[PlayCard]) -> Result<Combination, String> {
         let pairs = Combination::get_pairs(&cards);
-        match pairs.len() {
+        return match pairs.len() {
             1 => {
                 let deck_card = pairs
                     .keys()
                     .nth(0)
                     .unwrap();
-                return Ok(Combination::Pair(*deck_card))
+                let counter = pairs
+                    .get(deck_card)
+                    .unwrap();
+                match counter {
+                    2 => Ok(Combination::Pair(*deck_card)),
+                    3 => Ok(Combination::ThreeOfAKind(*deck_card)),
+                    4 => {
+                        match cards.len() {
+                            3 => Err(String::from("Found four of a kind on 3-card line")),
+                            5 => Ok(Combination::FourOfAKind(*deck_card)),
+                            _ => Err(String::from("Wrong number of cards"))
+                        }
+                    }
+                    _ => Err(String::from("Invalid pair counter"))
+                }
             },
-            _ => {}
+            2 => {
+                match cards.len() {
+                    3 => Err(String::from("Found two pairs or full house on 3-card line")),
+                    5 => {
+                        let counter_sum = pairs
+                            .iter()
+                            .fold(
+                                0,
+                                |acc, (deck_card, &counter)|
+                                    acc + counter
+                            );
+                        match counter_sum {
+                            4 => {
+                                let pair1 = pairs
+                                    .iter()
+                                    .max_by(
+                                        |
+                                            &(a_key, a_value),
+                                            &(b_key, b_value)
+                                        |
+                                            a_value.cmp(b_value)
+                                    )
+                                    .map(|(key, value)| key)
+                                    .unwrap();
+                                let pair2 = pairs
+                                    .iter()
+                                    .min_by(
+                                        |
+                                            &(a_key, a_value),
+                                            &(b_key, b_value)
+                                        |
+                                            a_value.cmp(b_value)
+                                    )
+                                    .map(|(key, value)| key)
+                                    .unwrap();
+                                Ok(Combination::TwoPairs {
+                                    pair1: *pair1,
+                                    pair2: *pair2,
+                                })
+                            },
+                            5 => {
+                                let double_deck_card = pairs
+                                    .iter()
+                                    .filter(|&(&x, &y)| y == 2)
+                                    .map(|(key, value)| key)
+                                    .next()
+                                    .unwrap();
+                                let triple_deck_card = pairs
+                                    .iter()
+                                    .filter(|&(&x, &y)| y == 3)
+                                    .map(|(key, value)| key)
+                                    .next()
+                                    .unwrap();
+                                Ok(Combination::FullHouse {
+                                    triple: *triple_deck_card,
+                                    double: *double_deck_card
+                                })
+                            },
+                            _ => Err(String::from("Invalid pair counter sum"))
+                        }
+                    },
+                    _ => Err(String::from("Wrong number of cards"))
+                }
+            },
+            _ => Err(String::from("Invalid number of pairs"))
         }
-        Ok(Combination::RoyalFlush(Suit::Hearts))
     }
 }
 
@@ -172,7 +243,7 @@ pub fn parse_input(player_input: [[&str; 13]; 3]) -> Result<String, String>{
 
         let top = Combination::from_vec_cards(&parsed_cards[..3])?;
         let middle = Combination::from_vec_cards(&parsed_cards[3..8])?;
-        let bottom = Combination::from_vec_cards(&parsed_cards[3..8])?;
+        let bottom = Combination::from_vec_cards(&parsed_cards[8..])?;
 
         let table = PlayerTable {
             top,
