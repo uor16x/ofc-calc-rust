@@ -1,8 +1,10 @@
 extern crate strum;
 use core::fmt;
 use std::collections::HashMap;
+use std::hash::Hash;
 use strum_macros::{ EnumIter, EnumString };
 use std::str::FromStr;
+
 
 #[derive(Debug, EnumIter, Clone, PartialEq, EnumString)]
 enum Suit {
@@ -12,21 +14,21 @@ enum Suit {
     Spades
 }
 
-#[derive(Debug, EnumIter, Clone, PartialEq)]
+#[derive(Debug, EnumIter, Clone, Copy, PartialEq, Eq, Hash)]
 enum DeckCard {
-    Two,
-    Three,
-    Four,
-    Five,
-    Six,
-    Seven,
-    Eight,
-    Nine,
-    Ten,
-    Jack,
-    Queen,
-    King,
-    Ace,
+    Two = 2,
+    Three = 3,
+    Four = 4,
+    Five = 5,
+    Six = 6,
+    Seven = 7,
+    Eight = 8,
+    Nine = 9,
+    Ten = 10,
+    Jack = 11,
+    Queen = 12,
+    King = 13,
+    Ace = 14,
 }
 
 #[derive(Debug, Clone)]
@@ -73,6 +75,12 @@ impl DeckCard {
             _ => Err(String::from(" -- no such deck card"))
         }
     }
+
+    fn get_pair() -> HashMap<DeckCard, i32> {
+        let mut z = HashMap::new();
+        z.insert(DeckCard::King, 1);
+        z
+    }
 }
 
 impl Suit {
@@ -93,32 +101,32 @@ impl Combination {
         cards.iter().all(|card| &card.suit.to_string() == first_suit)
     }
 
-    fn check_pairs(cards: &[PlayCard]) -> HashMap<String, Vec<&PlayCard>> {
-        let mut pairs: HashMap<String, Vec<&PlayCard>> = HashMap::new();
-        for card in cards {
-            let value = card.value.to_string();
-            let mut new_pair_vec = vec![card];
-            let found = match pairs.get(&value) {
-                None => {}
-                Some(old_pair_vec) => {
-                    new_pair_vec = old_pair_vec
-                        .iter()
-                        .cloned()
-                        .chain(
-                            new_pair_vec
-                                .iter()
-                                .cloned()
-                        ).collect();
-                }
-            };
-            pairs.insert(value, new_pair_vec);
+    fn get_pairs(cards: &[PlayCard]) -> HashMap<DeckCard, u8> {
+        let mut pairs: HashMap<DeckCard, u8> = HashMap::new();
+        for card in cards
+            .iter() {
+                let mut new_value = match pairs.get(&card.value) {
+                    None => 1,
+                    Some(old_value) => old_value + 1
+                };
+                pairs.insert(card.value, new_value);
         };
-
+        pairs.retain(|_, v| *v > 1);
         pairs
     }
 
     fn from_vec_cards(cards: &[PlayCard]) -> Result<Combination, String> {
-        let pairs = Combination::check_pairs(&cards);
+        let pairs = Combination::get_pairs(&cards);
+        match pairs.len() {
+            1 => {
+                let deck_card = pairs
+                    .keys()
+                    .nth(0)
+                    .unwrap();
+                return Ok(Combination::Pair(*deck_card))
+            },
+            _ => {}
+        }
         Ok(Combination::RoyalFlush(Suit::Hearts))
     }
 }
