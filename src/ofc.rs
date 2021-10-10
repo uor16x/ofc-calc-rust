@@ -4,7 +4,7 @@ use std::hash::Hash;
 use std::str::FromStr;
 use enum_index::{EnumIndex, IndexEnum};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 enum Suit {
     Hearts,
     Diamonds,
@@ -38,7 +38,7 @@ enum DeckCard {
     Ace,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 struct PlayCard {
     value: DeckCard,
     suit: Suit
@@ -116,8 +116,31 @@ impl Combination {
     }
 
     fn from_vec_cards(cards: &[PlayCard]) -> Result<Combination, String> {
+        if cards.len() < 3 || cards.len() > 5 {
+            return Err(String::from("Invalid number of cards passed"))
+        }
         let pairs = Combination::get_pairs(&cards);
         return match pairs.len() {
+            0 => {
+                match Combination::check_flush(&cards) {
+                    true => {
+                        let card = cards
+                            .iter()
+                            .max_by(
+                                |
+                                    &card1,
+                                    &card2
+                                |
+                                    card1.value.enum_index().cmp(
+                                        &card2.value.enum_index()
+                                    )
+                            )
+                            .unwrap();
+                        Ok(Combination::Flush(*card))
+                    }
+                    false => Err(String::from("TODO"))
+                }
+            },
             1 => {
                 let deck_card = pairs
                     .keys()
