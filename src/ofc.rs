@@ -1,5 +1,6 @@
 extern crate strum;
 use core::fmt;
+use std::collections::HashMap;
 use strum_macros::{ EnumIter, EnumString };
 use std::str::FromStr;
 
@@ -32,11 +33,6 @@ enum DeckCard {
 struct PlayCard {
     value: DeckCard,
     suit: Suit
-}
-
-struct LinePair {
-    value: DeckCard,
-    count: u8,
 }
 
 enum Combination {
@@ -97,11 +93,32 @@ impl Combination {
         cards.iter().all(|card| &card.suit.to_string() == first_suit)
     }
 
-    fn check_pairs(cards: &[PlayCard]) -> Result<i32, String> {
-        Ok(0)
+    fn check_pairs(cards: &[PlayCard]) -> HashMap<String, Vec<&PlayCard>> {
+        let mut pairs: HashMap<String, Vec<&PlayCard>> = HashMap::new();
+        for card in cards {
+            let value = card.value.to_string();
+            let mut new_pair_vec = vec![card];
+            let found = match pairs.get(&value) {
+                None => {}
+                Some(old_pair_vec) => {
+                    new_pair_vec = old_pair_vec
+                        .iter()
+                        .cloned()
+                        .chain(
+                            new_pair_vec
+                                .iter()
+                                .cloned()
+                        ).collect();
+                }
+            };
+            pairs.insert(value, new_pair_vec);
+        };
+
+        pairs
     }
 
     fn from_vec_cards(cards: &[PlayCard]) -> Result<Combination, String> {
+        let pairs = Combination::check_pairs(&cards);
         Ok(Combination::RoyalFlush(Suit::Hearts))
     }
 }
