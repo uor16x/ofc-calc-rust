@@ -1,8 +1,9 @@
+extern crate strum;
 use core::fmt;
-use std::collections::HashMap;
-use strum_macros::EnumIter;
+use strum_macros::{ EnumIter, EnumString };
+use std::str::FromStr;
 
-#[derive(Debug, EnumIter, Clone, PartialEq)]
+#[derive(Debug, EnumIter, Clone, PartialEq, EnumString)]
 enum Suit {
     Hearts,
     Diamonds,
@@ -33,10 +34,15 @@ struct PlayCard {
     suit: Suit
 }
 
+struct LinePair {
+    value: DeckCard,
+    count: u8,
+}
+
 enum Combination {
     Kicker(DeckCard),
     Pair(DeckCard),
-    TwoPairs {pair1: DeckCard, pair2: DeckCard },
+    TwoPairs { pair1: DeckCard, pair2: DeckCard },
     ThreeOfAKind(DeckCard),
     Straight(DeckCard),
     Flush(PlayCard),
@@ -44,10 +50,6 @@ enum Combination {
     FourOfAKind(DeckCard),
     StraightFlush(PlayCard),
     RoyalFlush(Suit)
-}
-
-struct Line {
-    cards: Vec<PlayCard>,
 }
 
 struct PlayerTable {
@@ -89,27 +91,18 @@ impl Suit {
     }
 }
 
-impl Line {
-    fn check_flush(&self) -> bool {
-        let first_suit = &self.cards[0].suit.to_string();
-        self.cards.iter().all(|card| &card.suit.to_string() == first_suit)
+impl Combination {
+    fn check_flush(cards: &[PlayCard]) -> bool {
+        let first_suit = &cards[0].suit.to_string();
+        cards.iter().all(|card| &card.suit.to_string() == first_suit)
     }
 
-    fn get_combination(&self) -> Result<Combination, String> {
+    fn check_pairs(cards: &[PlayCard]) -> Result<i32, String> {
+        Ok(0)
+    }
+
+    fn from_vec_cards(cards: &[PlayCard]) -> Result<Combination, String> {
         Ok(Combination::RoyalFlush(Suit::Hearts))
-        // let line_length = &self.cards.len();
-        // let pairs = &self.count_pairs();
-        // match pairs.keys().len() {
-        //     1 => {
-        //         match line_length {
-        //             3 => {
-        //                 Ok(Combination::ThreeOfAKind(DeckCard::Three))
-        //             },
-        //             _ => Err(String::from("sdf"))
-        //         }
-        //     }
-        //     _ => Err(String::from("sdf"))
-        // }
     }
 }
 
@@ -152,24 +145,14 @@ pub fn parse_input(player_input: [[&str; 13]; 3]) -> Result<String, String>{
             parsed_cards.push(card);
         }
 
-        let top = Line {
-            cards: (&parsed_cards[..3]).iter().cloned().collect()
-        };
-        let middle = Line {
-            cards: (&parsed_cards[3..8]).iter().cloned().collect()
-        };
-        let bottom = Line {
-            cards: (&parsed_cards[3..8]).iter().cloned().collect(),
-        };
-
-        let top_combination = top.get_combination()?;
-        let middle_combination = middle.get_combination()?;
-        let bottom_combination = bottom.get_combination()?;
+        let top = Combination::from_vec_cards(&parsed_cards[..3])?;
+        let middle = Combination::from_vec_cards(&parsed_cards[3..8])?;
+        let bottom = Combination::from_vec_cards(&parsed_cards[3..8])?;
 
         let table = PlayerTable {
-            top: top_combination,
-            middle: middle_combination,
-            bottom: bottom_combination
+            top,
+            middle,
+            bottom
         };
         println!("Table calculated");
     }
