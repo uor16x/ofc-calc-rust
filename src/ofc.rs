@@ -98,8 +98,40 @@ impl Suit {
 
 impl Combination {
     fn check_flush(cards: &[PlayCard]) -> bool {
-        let first_suit = &cards[0].suit.to_string();
-        cards.iter().all(|card| &card.suit.to_string() == first_suit)
+        cards.len() == 5 &&
+            cards.iter().all(
+                |card|
+                    &card.suit.to_string() == &cards[0].suit.to_string()
+            )
+    }
+
+    fn check_straight(cards: &[PlayCard]) -> bool {
+        if cards.len() != 5 {
+            return false
+        }
+        let mut values = cards
+            .iter()
+            .map(|&card| card.value)
+            .collect::<Vec<DeckCard>>();
+
+        values
+            .sort_by(
+                |value1, value2|
+                    value1.enum_index().cmp(
+                        &value2.enum_index()
+                    )
+            );
+
+        let mut step = 0;
+        let mut sequence = true;
+        while step < values.len() - 1 && sequence {
+            let current = values.get(step).unwrap();
+            let next = values.get(step + 1).unwrap();
+            sequence = sequence &&
+                next.enum_index() - current.enum_index() == 1;
+            step += 1;
+        }
+        return sequence;
     }
 
     fn get_pairs(cards: &[PlayCard]) -> HashMap<DeckCard, u8> {
@@ -119,6 +151,7 @@ impl Combination {
         if cards.len() < 3 || cards.len() > 5 {
             return Err(String::from("Invalid number of cards passed"))
         }
+        let is_str = Combination::check_straight(&cards);
         let pairs = Combination::get_pairs(&cards);
         return match pairs.len() {
             0 => {
