@@ -1,12 +1,10 @@
-extern crate strum;
 use core::fmt;
 use std::collections::HashMap;
 use std::hash::Hash;
-use strum_macros::{ EnumIter, EnumString };
 use std::str::FromStr;
+use enum_index::{EnumIndex, IndexEnum};
 
-
-#[derive(Debug, EnumIter, Clone, PartialEq, EnumString)]
+#[derive(Debug, Clone, PartialEq)]
 enum Suit {
     Hearts,
     Diamonds,
@@ -14,7 +12,16 @@ enum Suit {
     Spades
 }
 
-#[derive(Debug, EnumIter, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Hash,
+    EnumIndex,
+    IndexEnum
+)]
 enum DeckCard {
     Two,
     Three,
@@ -97,13 +104,12 @@ impl Combination {
 
     fn get_pairs(cards: &[PlayCard]) -> HashMap<DeckCard, u8> {
         let mut pairs: HashMap<DeckCard, u8> = HashMap::new();
-        for card in cards
-            .iter() {
-                let mut new_value = match pairs.get(&card.value) {
-                    None => 1,
-                    Some(old_value) => old_value + 1
-                };
-                pairs.insert(card.value, new_value);
+        for card in cards.iter() {
+            let mut new_value = match pairs.get(&card.value) {
+                None => 1,
+                Some(old_value) => old_value + 1
+            };
+            pairs.insert(card.value, new_value);
         };
         pairs.retain(|_, v| *v > 1);
         pairs

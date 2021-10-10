@@ -1,4 +1,8 @@
 mod ofc;
+extern crate enum_index;
+// Contains derives
+#[macro_use]
+extern crate enum_index_derive;
 
 fn main() {
     let testData = [
