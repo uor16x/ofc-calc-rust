@@ -2,8 +2,8 @@ use crate::poker::cards::play_card::PlayCard;
 use crate::poker::combination::Combination;
 
 pub fn parse_input(player_input: [[&str; 13]; 3]) -> Result<String, String>{
-    // let mut player_tables: Vec<PlayerTable> = Vec::with_capacity(3);
-    for player_data in player_input {
+    let mut overall = String::new();
+    for (player_index, player_data) in player_input.iter().enumerate() {
         let mut parsed_cards: Vec<PlayCard> = Vec::with_capacity(13);
         for card_value in player_data {
             let card = PlayCard::from_string(&card_value)?;
@@ -14,10 +14,16 @@ pub fn parse_input(player_input: [[&str; 13]; 3]) -> Result<String, String>{
         let middle = Combination::from_vec_cards(&parsed_cards[3..8])?;
         let bottom = Combination::from_vec_cards(&parsed_cards[8..])?;
 
-        let table = vec![top, middle, bottom];
-        for combination in table {
-            println!("Line: ${:?}", combination);
-        }
+        overall = overall.to_owned() + "\nPlayer #"
+            + &(player_index + 1).to_string()[..]
+            + " :\n"
+            + "Top: "
+            + &top.to_string()[..]
+            + "\nMiddle: "
+            + &middle.to_string()[..]
+            + "\nBottom: "
+            + &bottom.to_string()[..]
+            + "\n---";
     }
-    return Ok(String::from("zxc"));
+    return Ok(overall);
 }

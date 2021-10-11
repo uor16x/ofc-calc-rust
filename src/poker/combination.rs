@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use core::fmt;
 use crate::poker::cards::deck_card::DeckCard;
 use crate::poker::cards::play_card::PlayCard;
 use crate::poker::cards::suit::Suit;
@@ -17,6 +18,12 @@ pub enum Combination {
     FourOfAKind(DeckCard),
     StraightFlush(PlayCard),
     RoyalFlush(Suit)
+}
+
+impl fmt::Display for Combination {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 impl Combination {
