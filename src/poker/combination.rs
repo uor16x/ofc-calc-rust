@@ -72,7 +72,7 @@ impl Combination {
         }
     }
 
-    fn get_pairs(cards: &[PlayCard]) -> HashMap<DeckCard, u8> {
+    fn calc_pairs(cards: &[PlayCard]) -> HashMap<DeckCard, u8> {
         let mut pairs: HashMap<DeckCard, u8> = HashMap::new();
         for card in cards.iter() {
             let new_value = match pairs.get(&card.value) {
@@ -86,98 +86,15 @@ impl Combination {
     }
 
     pub(crate) fn from_vec_cards(cards: &[PlayCard]) -> Result<Combination, String> {
-        if cards.len() < 3 || cards.len() > 5 {
+        let cards_len = cards.len();
+        if cards_len < 3 || cards_len > 5 {
             return Err(String::from("Invalid number of cards passed"))
         }
-        let pairs = Combination::get_pairs(&cards);
+        let pairs = Combination::calc_pairs(&cards);
         return match pairs.len() {
-            0 => sequence_hand(&cards),
-            1 => {
-                let deck_card = pairs
-                    .keys()
-                    .nth(0)
-                    .unwrap();
-                let counter = pairs
-                    .get(deck_card)
-                    .unwrap();
-                match counter {
-                    2 => Ok(Combination::Pair(*deck_card)),
-                    3 => Ok(Combination::ThreeOfAKind(*deck_card)),
-                    4 => {
-                        match cards.len() {
-                            3 => Err(String::from("Found four of a kind on 3-card line")),
-                            5 => Ok(Combination::FourOfAKind(*deck_card)),
-                            _ => Err(String::from("Wrong number of cards"))
-                        }
-                    }
-                    _ => Err(String::from("Invalid pair counter"))
-                }
-            },
-            2 => {
-                match cards.len() {
-                    3 => Err(String::from("Found two pairs or full house on 3-card line")),
-                    5 => {
-                        let counter_sum = pairs
-                            .iter()
-                            .fold(
-                                0,
-                                |acc, (_, &counter)|
-                                    acc + counter
-                            );
-                        match counter_sum {
-                            4 => {
-                                let pair1 = pairs
-                                    .iter()
-                                    .max_by(
-                                        |
-                                            &(_, a_value),
-                                            &(_, b_value)
-                                        |
-                                            a_value.cmp(b_value)
-                                    )
-                                    .map(|(key, _)| key)
-                                    .unwrap();
-                                let pair2 = pairs
-                                    .iter()
-                                    .min_by(
-                                        |
-                                            &(_, a_value),
-                                            &(_, b_value)
-                                        |
-                                            a_value.cmp(b_value)
-                                    )
-                                    .map(|(key, _)| key)
-                                    .unwrap();
-                                Ok(Combination::TwoPairs {
-                                    pair1: *pair1,
-                                    pair2: *pair2,
-                                })
-                            },
-                            5 => {
-                                let double_deck_card = pairs
-                                    .iter()
-                                    .filter(|&(_, &y)| y == 2)
-                                    .map(|(key, _)| key)
-                                    .next()
-                                    .unwrap();
-                                let triple_deck_card = pairs
-                                    .iter()
-                                    .filter(|&(_, &y)| y == 3)
-                                    .map(|(key, _)| key)
-                                    .next()
-                                    .unwrap();
-                                Ok(Combination::FullHouse {
-                                    triple: *triple_deck_card,
-                                    double: *double_deck_card
-                                })
-                            },
-                            _ => Err(String::from("Invalid pair counter sum"))
-                        }
-                    },
-                    _ => Err(String::from("Wrong number of cards"))
-                }
-            },
-            _ => Err(String::from("Invalid number of pairs"))
+            0 => sequence_hand(cards),
+            _ => pairs_hand(pairs, cards_len),
+
         }
     }
 }
@@ -196,6 +113,68 @@ fn sequence_hand(cards: &[PlayCard]) -> Result<Combination, String> {
     }
 }
 
-fn one_card_pair(cards: &[PlayCard]) -> Result<Combination, String> {
-    Ok(Combination::Kicker(DeckCard::Ace))
+fn pairs_hand(pairs: HashMap<DeckCard, u8>, cards_len: usize) -> Result<Combination, String> {
+    match pairs.len() {
+        1 => single_card_pairs(pairs, cards_len),
+        2 => multiple_cards_pairs(pairs, cards_len),
+        _ => Err(String::from("Invalid number of pairs"))
+    }
+}
+
+fn single_card_pairs(pairs: HashMap<DeckCard, u8>, cards_len: usize) -> Result<Combination, String> {
+    let deck_card = pairs
+        .keys()
+        .nth(0)
+        .unwrap();
+    let counter = pairs
+        .get(deck_card)
+        .unwrap();
+    match counter {
+        2 => Ok(Combination::Pair(*deck_card)),
+        3 => Ok(Combination::ThreeOfAKind(*deck_card)),
+        4 => match cards_len {
+            3 => Err(String::from("Found four of a kind on 3-card line")),
+            5 => Ok(Combination::FourOfAKind(*deck_card)),
+            _ => Err(String::from("Wrong number of cards"))
+        }
+        _ => Err(String::from("Invalid pair counter"))
+    }
+}
+
+fn multiple_cards_pairs(pairs: HashMap<DeckCard, u8>, cards_len: usize) -> Result<Combination, String> {
+    match cards_len {
+        3 => Err(String::from("Found two pairs or full house on 3-card line")),
+        5 => {
+            let counter_sum = pairs
+                .iter()
+                .fold(|acc, (_, &counter)| acc + counter);
+            match counter_sum {
+                4 => {
+                    let pair1 = collection::hashmap_key_max_by_value(&pairs);
+                    let pair2 = collection::hashmap_key_min_by_value(&pairs);
+                    Ok(Combination::TwoPairs { pair1: *pair1, pair2: *pair2 })
+                },
+                5 => {
+                    let double_deck_card = pairs
+                        .iter()
+                        .filter(|&(_, &y)| y == 2)
+                        .map(|(key, _)| key)
+                        .next()
+                        .unwrap();
+                    let triple_deck_card = pairs
+                        .iter()
+                        .filter(|&(_, &y)| y == 3)
+                        .map(|(key, _)| key)
+                        .next()
+                        .unwrap();
+                    Ok(Combination::FullHouse {
+                        triple: *triple_deck_card,
+                        double: *double_deck_card
+                    })
+                },
+                _ => Err(String::from("Invalid pair counter sum"))
+            }
+        },
+        _ => Err(String::from("Wrong number of cards"))
+    }
 }
