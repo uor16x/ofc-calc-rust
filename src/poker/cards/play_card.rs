@@ -2,7 +2,7 @@ use crate::poker::cards::deck_card::DeckCard;
 use crate::poker::cards::suit::Suit;
 use enum_index::{EnumIndex, IndexEnum};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct PlayCard {
     pub value: DeckCard,
     pub suit: Suit

@@ -1,4 +1,3 @@
 pub mod game;
-
-mod combination;
-mod cards;
+pub mod combination;
+pub mod cards;

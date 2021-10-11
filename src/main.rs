@@ -4,6 +4,7 @@ extern crate enum_index_derive;
 
 mod helper;
 mod poker;
+mod test;
 
 fn main() {
     let test_data = [
