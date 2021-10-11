@@ -53,5 +53,5 @@ fn main() {
         ],
     ];
     let result = poker::game::parse_input(test_data);
-    println!("Done: {}", result.unwrap());
+    println!("{:?}", result);
 }

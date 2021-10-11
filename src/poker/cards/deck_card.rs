@@ -1,15 +1,16 @@
 use core::fmt;
-use std::hash::Hash;
+use enum_index::{EnumIndex, IndexEnum};
+
+const CARD_NOTATION: [char; 13] = [
+    '2', '3', '4', '5',
+    '6', '7', '8', '9',
+    'T', 'J', 'Q', 'K', 'A'
+];
 
 #[derive(
-Debug,
-Clone,
-Copy,
-PartialEq,
-Eq,
-Hash,
-EnumIndex,
-IndexEnum
+    Debug, Clone, Copy,
+    PartialEq, Eq, Hash,
+    EnumIndex, IndexEnum
 )]
 pub enum DeckCard {
     Two,
@@ -28,22 +29,13 @@ pub enum DeckCard {
 }
 
 impl DeckCard {
-    pub fn from_string(symbol: &str) -> Result<DeckCard, String> {
-        match symbol {
-            "2" => Ok(DeckCard::Two),
-            "3" => Ok(DeckCard::Three),
-            "4" => Ok(DeckCard::Four),
-            "5" => Ok(DeckCard::Five),
-            "6" => Ok(DeckCard::Six),
-            "7" => Ok(DeckCard::Seven),
-            "8" => Ok(DeckCard::Eight),
-            "9" => Ok(DeckCard::Nine),
-            "T" => Ok(DeckCard::Ten),
-            "J" => Ok(DeckCard::Jack),
-            "Q" => Ok(DeckCard::Queen),
-            "K" => Ok(DeckCard::King),
-            "A" => Ok(DeckCard::Ace),
-            _ => Err(String::from(" -- no such deck card"))
+    pub fn from_string(symbol: char) -> Result<DeckCard, String> {
+        let index = CARD_NOTATION
+            .iter()
+            .position(|&x| x == symbol);
+        match index {
+            None => Err(String::from(" -- no such deck card")),
+            Some(found_index) => Ok(DeckCard::index_enum(found_index).unwrap())
         }
     }
 }
@@ -53,4 +45,3 @@ impl fmt::Display for DeckCard {
         write!(f, "{:?}", self)
     }
 }
-

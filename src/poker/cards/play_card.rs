@@ -14,8 +14,12 @@ impl PlayCard {
             return Err(err_message + "length should be 2")
         }
 
-        let value = DeckCard::from_string(&input[..1])?;
-        let suit = Suit::from_string(&input[1..2])?;
+        let value = DeckCard::from_string(
+            input.chars().nth(0).unwrap()
+        )?;
+        let suit = Suit::from_string(
+            input.chars().nth(1).unwrap()
+        )?;
         let result = PlayCard {
             value,
             suit,

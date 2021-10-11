@@ -102,7 +102,7 @@ impl Combination {
                             .unwrap();
                         Ok(Combination::Flush(*card))
                     }
-                    false => Err(String::from("TODO"))
+                    false => Ok(Combination::Straight(DeckCard::Ace))
                 }
             },
             1 => {

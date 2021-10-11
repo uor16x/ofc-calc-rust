@@ -1,6 +1,14 @@
 use core::fmt;
+use enum_index::{EnumIndex, IndexEnum};
 
-#[derive(Debug, Clone, PartialEq, Copy)]
+const SUIT_NOTATION: [char; 4] = [
+    'h', 'd', 'c', 's',
+];
+
+#[derive(
+    Debug,Clone,PartialEq,
+    Copy, EnumIndex, IndexEnum
+)]
 pub enum Suit {
     Hearts,
     Diamonds,
@@ -9,13 +17,13 @@ pub enum Suit {
 }
 
 impl Suit {
-    pub fn from_string(symbol: &str) -> Result<Suit, String> {
-        match symbol {
-            "h" => Ok(Suit::Hearts),
-            "d" => Ok(Suit::Diamonds),
-            "c" => Ok(Suit::Clubs),
-            "s" => Ok(Suit::Spades),
-            _ => Err(String::from(" -- no such suit"))
+    pub fn from_string(symbol: char) -> Result<Suit, String> {
+        let index = SUIT_NOTATION
+            .iter()
+            .position(|&x| x == symbol);
+        match index {
+            None => Err(String::from(" -- no such deck card")),
+            Some(found_index) => Ok(Suit::index_enum(found_index).unwrap())
         }
     }
 }
