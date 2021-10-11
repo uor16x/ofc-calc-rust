@@ -27,10 +27,7 @@ impl Combination {
                     &card.suit.to_string() == &cards[0].suit.to_string()
             );
         match is_flash {
-            true => {
-                let highest_card = PlayCard::calc_highest_card(&cards);
-                Some(highest_card)
-            }
+            true => Some(PlayCard::calc_highest_card(&cards)),
             false => None
         }
     }
@@ -70,10 +67,7 @@ impl Combination {
         // ];
         // TODO: add wheel
         match sequence {
-            true => {
-                let highest_card = PlayCard::calc_highest_card(&cards);
-                Some(highest_card.value)
-            }
+            true => Some(PlayCard::calc_highest_card(&cards)),
             false => None
         }
     }

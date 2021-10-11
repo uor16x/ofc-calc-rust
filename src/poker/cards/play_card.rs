@@ -29,6 +29,9 @@ impl PlayCard {
     }
 
     pub fn calc_highest_card(cards: &[PlayCard]) -> PlayCard {
+        if cards.len() < 3 || cards.len() > 5 {
+            panic!("Invalid number of cards passed")
+        }
         cards
             .iter()
             .max_by(
