@@ -6,7 +6,7 @@ use crate::poker::cards::suit::Suit;
 use crate::enum_index::EnumIndex;
 use crate::helper::collection;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Combination {
     Kicker(DeckCard),
     Pair(DeckCard),
@@ -73,7 +73,7 @@ impl Combination {
             DeckCard::Ace
         ];
         let is_wheel = wheel.eq(&values);
-        match sequence && is_wheel {
+        match sequence || is_wheel {
             true => match is_wheel {
                 true => Some(*values.get(wheel.len() - 2).unwrap()),
                 false => Some(PlayCard::calc_highest_card(&cards).value),
@@ -95,7 +95,7 @@ impl Combination {
         pairs
     }
 
-    pub(crate) fn from_vec_cards(cards: &[PlayCard]) -> Result<Combination, String> {
+    pub fn from_vec_cards(cards: &[PlayCard]) -> Result<Combination, String> {
         let cards_len = cards.len();
         if cards_len < 3 || cards_len > 5 {
             return Err(String::from("Invalid number of cards passed"))
@@ -114,11 +114,17 @@ fn sequence_hand(cards: &[PlayCard]) -> Result<Combination, String> {
     let flush = Combination::check_flush(&cards);
     match (straight, flush) {
         (Some(high_card), None) => Ok(Combination::Straight(high_card)),
-        (None, Some(high_card)) => Ok(Combination::Flush(high_card)),
-        (Some(_), Some(flush_high_card)) => match flush_high_card.value {
+        (
+            Some(straight_high_card),
+            Some(flush_high_card)
+        ) => match straight_high_card {
             DeckCard::Ace => Ok(Combination::RoyalFlush(flush_high_card.suit)),
-            _ => Ok(Combination::StraightFlush(flush_high_card))
+            _ => Ok(Combination::StraightFlush(PlayCard {
+                suit: flush_high_card.suit,
+                value: straight_high_card
+            }))
         },
+        (None, Some(high_card)) => Ok(Combination::Flush(high_card)),
         (_, _) => Ok(Combination::Kicker(PlayCard::calc_highest_card(cards).value))
     }
 }
@@ -159,12 +165,9 @@ fn multiple_cards_pairs(pairs: HashMap<DeckCard, u8>, cards_len: usize) -> Resul
                 .iter()
                 .fold(0, |acc, (_, &counter)| acc + counter);
             match counter_sum {
-                4 => {
-                    let pair1 = collection::hashmap_key_max_by_value(&pairs);
-                    let pair2 = collection::hashmap_key_min_by_value(&pairs);
-                    Ok(Combination::TwoPairs { pair1: *pair1, pair2: *pair2 })
-                },
+                4 => two_pairs(pairs),
                 5 => {
+                    // TODO: refactor in more consistent way
                     let triple = collection::hashmap_get_key_by_value(
                         &pairs, 3
                     ).unwrap();
@@ -181,4 +184,26 @@ fn multiple_cards_pairs(pairs: HashMap<DeckCard, u8>, cards_len: usize) -> Resul
         },
         _ => Err(String::from("Wrong number of cards"))
     }
+}
+
+fn two_pairs(pairs: HashMap<DeckCard, u8>) -> Result<Combination, String> {
+    let sort_f = |
+        (_, index1): &(DeckCard, usize),
+        (_, index2): &(DeckCard, usize)
+    |
+        index2.cmp(&index1);
+    let map_f = |&deck_card: &DeckCard|
+        (deck_card, deck_card.enum_index());
+    let mut deck_cards = pairs
+        .keys()
+        .map(map_f)
+        .collect::<Vec<(DeckCard, usize)>>();
+    deck_cards.sort_by(sort_f);
+    let pair1 = deck_cards
+        .get(0)
+        .unwrap().0;
+    let pair2 = deck_cards
+        .get(1)
+        .unwrap().0;
+    Ok(Combination::TwoPairs { pair1, pair2 })
 }
