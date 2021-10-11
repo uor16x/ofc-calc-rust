@@ -5,6 +5,8 @@ use crate::poker::cards::play_card::PlayCard;
 use crate::poker::cards::suit::Suit;
 use crate::enum_index::EnumIndex;
 use crate::helper::collection;
+use crate::poker::cards::deck_card::DeckCard::*;
+use crate::poker::combination::Combination::*;
 
 #[derive(Debug, PartialEq)]
 pub enum Combination {
@@ -66,11 +68,11 @@ impl Combination {
             step += 1;
         }
         let wheel = vec![
-            DeckCard::Two,
-            DeckCard::Three,
-            DeckCard::Four,
-            DeckCard::Five,
-            DeckCard::Ace
+            Two,
+            Three,
+            Four,
+            Five,
+            Ace
         ];
         let is_wheel = wheel.eq(&values);
         match sequence || is_wheel {
@@ -113,19 +115,19 @@ fn sequence_hand(cards: &[PlayCard]) -> Result<Combination, String> {
     let straight = Combination::check_straight(&cards);
     let flush = Combination::check_flush(&cards);
     match (straight, flush) {
-        (Some(high_card), None) => Ok(Combination::Straight(high_card)),
+        (Some(high_card), None) => Ok(Straight(high_card)),
         (
             Some(straight_high_card),
             Some(flush_high_card)
         ) => match straight_high_card {
-            DeckCard::Ace => Ok(Combination::RoyalFlush(flush_high_card.suit)),
-            _ => Ok(Combination::StraightFlush(PlayCard {
+            Ace => Ok(RoyalFlush(flush_high_card.suit)),
+            _ => Ok(StraightFlush(PlayCard {
                 suit: flush_high_card.suit,
                 value: straight_high_card
             }))
         },
-        (None, Some(high_card)) => Ok(Combination::Flush(high_card)),
-        (_, _) => Ok(Combination::Kicker(PlayCard::calc_highest_card(cards).value))
+        (None, Some(high_card)) => Ok(Flush(high_card)),
+        (_, _) => Ok(Kicker(PlayCard::calc_highest_card(cards).value))
     }
 }
 
@@ -146,11 +148,11 @@ fn single_card_pairs(pairs: HashMap<DeckCard, u8>, cards_len: usize) -> Result<C
         .get(deck_card)
         .unwrap();
     match counter {
-        2 => Ok(Combination::Pair(*deck_card)),
-        3 => Ok(Combination::ThreeOfAKind(*deck_card)),
+        2 => Ok(Pair(*deck_card)),
+        3 => Ok(ThreeOfAKind(*deck_card)),
         4 => match cards_len {
             3 => Err(String::from("Found four of a kind on 3-card line")),
-            5 => Ok(Combination::FourOfAKind(*deck_card)),
+            5 => Ok(FourOfAKind(*deck_card)),
             _ => Err(String::from("Wrong number of cards"))
         }
         _ => Err(String::from("Invalid pair counter"))
@@ -174,10 +176,7 @@ fn multiple_cards_pairs(pairs: HashMap<DeckCard, u8>, cards_len: usize) -> Resul
                     let double = collection::hashmap_get_key_by_value(
                         &pairs, 2
                     ).unwrap();
-                    Ok(Combination::FullHouse {
-                        triple,
-                        double
-                    })
+                    Ok(FullHouse { triple, double })
                 },
                 _ => Err(String::from("Invalid pair counter sum"))
             }
@@ -205,5 +204,5 @@ fn two_pairs(pairs: HashMap<DeckCard, u8>) -> Result<Combination, String> {
     let pair2 = deck_cards
         .get(1)
         .unwrap().0;
-    Ok(Combination::TwoPairs { pair1, pair2 })
+    Ok(TwoPairs { pair1, pair2 })
 }
