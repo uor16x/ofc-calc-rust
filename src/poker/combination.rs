@@ -1,50 +1,11 @@
-use core::fmt;
 use std::collections::HashMap;
-use std::hash::Hash;
-use std::str::FromStr;
-use enum_index::{EnumIndex, IndexEnum};
+use crate::poker::cards::deck_card::DeckCard;
+use crate::poker::cards::play_card::PlayCard;
+use crate::poker::cards::suit::Suit;
+use crate::enum_index::EnumIndex;
 
-#[derive(Debug, Clone, PartialEq, Copy)]
-enum Suit {
-    Hearts,
-    Diamonds,
-    Clubs,
-    Spades
-}
-
-#[derive(
-    Debug,
-    Clone,
-    Copy,
-    PartialEq,
-    Eq,
-    Hash,
-    EnumIndex,
-    IndexEnum
-)]
-enum DeckCard {
-    Two,
-    Three,
-    Four,
-    Five,
-    Six,
-    Seven,
-    Eight,
-    Nine,
-    Ten,
-    Jack,
-    Queen,
-    King,
-    Ace,
-}
-
-#[derive(Debug, Clone, Copy)]
-struct PlayCard {
-    value: DeckCard,
-    suit: Suit
-}
-
-enum Combination {
+#[derive(Debug)]
+pub enum Combination {
     Kicker(DeckCard),
     Pair(DeckCard),
     TwoPairs { pair1: DeckCard, pair2: DeckCard },
@@ -55,45 +16,6 @@ enum Combination {
     FourOfAKind(DeckCard),
     StraightFlush(PlayCard),
     RoyalFlush(Suit)
-}
-
-struct PlayerTable {
-    top: Combination,
-    middle: Combination,
-    bottom: Combination,
-}
-
-impl DeckCard {
-    fn from_string(symbol: &str) -> Result<DeckCard, String> {
-        match symbol {
-            "2" => Ok(DeckCard::Two),
-            "3" => Ok(DeckCard::Three),
-            "4" => Ok(DeckCard::Four),
-            "5" => Ok(DeckCard::Five),
-            "6" => Ok(DeckCard::Six),
-            "7" => Ok(DeckCard::Seven),
-            "8" => Ok(DeckCard::Eight),
-            "9" => Ok(DeckCard::Nine),
-            "T" => Ok(DeckCard::Ten),
-            "J" => Ok(DeckCard::Jack),
-            "Q" => Ok(DeckCard::Queen),
-            "K" => Ok(DeckCard::King),
-            "A" => Ok(DeckCard::Ace),
-            _ => Err(String::from(" -- no such deck card"))
-        }
-    }
-}
-
-impl Suit {
-    fn from_string(symbol: &str) -> Result<Suit, String> {
-        match symbol {
-            "h" => Ok(Suit::Hearts),
-            "d" => Ok(Suit::Diamonds),
-            "c" => Ok(Suit::Clubs),
-            "s" => Ok(Suit::Spades),
-            _ => Err(String::from(" -- no such suit"))
-        }
-    }
 }
 
 impl Combination {
@@ -109,11 +31,11 @@ impl Combination {
         if cards.len() != 5 {
             return false
         }
+
         let mut values = cards
             .iter()
             .map(|&card| card.value)
             .collect::<Vec<DeckCard>>();
-
         values
             .sort_by(
                 |value1, value2|
@@ -131,13 +53,21 @@ impl Combination {
                 next.enum_index() - current.enum_index() == 1;
             step += 1;
         }
+        // let wheel = vec![
+        //     DeckCard::Two,
+        //     DeckCard::Three,
+        //     DeckCard::Four,
+        //     DeckCard::Five,
+        //     DeckCard::Ace
+        // ];
+        // TODO: add wheel
         return sequence;
     }
 
     fn get_pairs(cards: &[PlayCard]) -> HashMap<DeckCard, u8> {
         let mut pairs: HashMap<DeckCard, u8> = HashMap::new();
         for card in cards.iter() {
-            let mut new_value = match pairs.get(&card.value) {
+            let new_value = match pairs.get(&card.value) {
                 None => 1,
                 Some(old_value) => old_value + 1
             };
@@ -147,11 +77,12 @@ impl Combination {
         pairs
     }
 
-    fn from_vec_cards(cards: &[PlayCard]) -> Result<Combination, String> {
+    pub(crate) fn from_vec_cards(cards: &[PlayCard]) -> Result<Combination, String> {
         if cards.len() < 3 || cards.len() > 5 {
             return Err(String::from("Invalid number of cards passed"))
         }
-        let is_str = Combination::check_straight(&cards);
+        // TODO: check straight
+        // let is_str = Combination::check_straight(&cards);
         let pairs = Combination::get_pairs(&cards);
         return match pairs.len() {
             0 => {
@@ -203,7 +134,7 @@ impl Combination {
                             .iter()
                             .fold(
                                 0,
-                                |acc, (deck_card, &counter)|
+                                |acc, (_, &counter)|
                                     acc + counter
                             );
                         match counter_sum {
@@ -212,23 +143,23 @@ impl Combination {
                                     .iter()
                                     .max_by(
                                         |
-                                            &(a_key, a_value),
-                                            &(b_key, b_value)
+                                            &(_, a_value),
+                                            &(_, b_value)
                                         |
                                             a_value.cmp(b_value)
                                     )
-                                    .map(|(key, value)| key)
+                                    .map(|(key, _)| key)
                                     .unwrap();
                                 let pair2 = pairs
                                     .iter()
                                     .min_by(
                                         |
-                                            &(a_key, a_value),
-                                            &(b_key, b_value)
+                                            &(_, a_value),
+                                            &(_, b_value)
                                         |
                                             a_value.cmp(b_value)
                                     )
-                                    .map(|(key, value)| key)
+                                    .map(|(key, _)| key)
                                     .unwrap();
                                 Ok(Combination::TwoPairs {
                                     pair1: *pair1,
@@ -238,14 +169,14 @@ impl Combination {
                             5 => {
                                 let double_deck_card = pairs
                                     .iter()
-                                    .filter(|&(&x, &y)| y == 2)
-                                    .map(|(key, value)| key)
+                                    .filter(|&(_, &y)| y == 2)
+                                    .map(|(key, _)| key)
                                     .next()
                                     .unwrap();
                                 let triple_deck_card = pairs
                                     .iter()
-                                    .filter(|&(&x, &y)| y == 3)
-                                    .map(|(key, value)| key)
+                                    .filter(|&(_, &y)| y == 3)
+                                    .map(|(key, _)| key)
                                     .next()
                                     .unwrap();
                                 Ok(Combination::FullHouse {
@@ -262,57 +193,4 @@ impl Combination {
             _ => Err(String::from("Invalid number of pairs"))
         }
     }
-}
-
-
-impl PlayCard {
-    fn from_string(input: &str) -> Result<PlayCard, String> {
-        let err_message = String::from("Failed to parse ") + &input;
-        if input.len() != 2 {
-            return Err(err_message + "length should be 2")
-        }
-
-        let value = DeckCard::from_string(&input[..1])?;
-        let suit = Suit::from_string(&input[1..2])?;
-        let result = PlayCard {
-            value,
-            suit,
-        };
-        Ok(result)
-    }
-}
-
-impl fmt::Display for DeckCard {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
-impl fmt::Display for Suit {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
-pub fn parse_input(player_input: [[&str; 13]; 3]) -> Result<String, String>{
-    let mut player_tables: Vec<PlayerTable> = Vec::with_capacity(3);
-    for player_data in player_input {
-        let mut parsed_cards: Vec<PlayCard> = Vec::with_capacity(13);
-        for card_value in player_data {
-            let card = PlayCard::from_string(&card_value)?;
-            parsed_cards.push(card);
-        }
-
-        let top = Combination::from_vec_cards(&parsed_cards[..3])?;
-        let middle = Combination::from_vec_cards(&parsed_cards[3..8])?;
-        let bottom = Combination::from_vec_cards(&parsed_cards[8..])?;
-
-        let table = PlayerTable {
-            top,
-            middle,
-            bottom
-        };
-        println!("Table calculated");
-    }
-    Ok(String::from("Ok"))
 }

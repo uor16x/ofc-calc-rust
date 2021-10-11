@@ -1,11 +1,11 @@
-mod ofc;
 extern crate enum_index;
-// Contains derives
 #[macro_use]
 extern crate enum_index_derive;
 
+mod poker;
+
 fn main() {
-    let testData = [
+    let test_data = [
         [
             "3s",
             "3h",
@@ -52,5 +52,6 @@ fn main() {
             "Ad"
         ],
     ];
-    ofc::parse_input(testData);
+    let result = poker::game::parse_input(test_data);
+    println!("Done: {}", result.unwrap());
 }
