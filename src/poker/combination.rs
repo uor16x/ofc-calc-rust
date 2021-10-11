@@ -3,6 +3,7 @@ use crate::poker::cards::deck_card::DeckCard;
 use crate::poker::cards::play_card::PlayCard;
 use crate::poker::cards::suit::Suit;
 use crate::enum_index::EnumIndex;
+use crate::helper::collection;
 
 #[derive(Debug)]
 pub enum Combination {
@@ -66,7 +67,7 @@ impl Combination {
         // ];
         // TODO: add wheel
         match sequence {
-            true => Some(PlayCard::calc_highest_card(&cards)),
+            true => Some(PlayCard::calc_highest_card(&cards).value),
             false => None
         }
     }
@@ -90,19 +91,7 @@ impl Combination {
         }
         let pairs = Combination::get_pairs(&cards);
         return match pairs.len() {
-            0 => {
-                let straight = Combination::check_straight(&cards);
-                let flush = Combination::check_flush(&cards);
-                match (straight, flush) {
-                    (Some(high_card), None) => Ok(Combination::Straight(high_card)),
-                    (None, Some(high_card)) => Ok(Combination::Flush(high_card)),
-                    (Some(_), Some(flush_high_card)) => match flush_high_card.value {
-                        DeckCard::Ace => Ok(Combination::RoyalFlush(flush_high_card.suit)),
-                        _ => Ok(Combination::StraightFlush(flush_high_card))
-                    },
-                    (_, _) => Ok(Combination::Kicker(PlayCard::calc_highest_card(cards)))
-                }
-            },
+            0 => sequence_hand(&cards),
             1 => {
                 let deck_card = pairs
                     .keys()
@@ -191,4 +180,22 @@ impl Combination {
             _ => Err(String::from("Invalid number of pairs"))
         }
     }
+}
+
+fn sequence_hand(cards: &[PlayCard]) -> Result<Combination, String> {
+    let straight = Combination::check_straight(&cards);
+    let flush = Combination::check_flush(&cards);
+    match (straight, flush) {
+        (Some(high_card), None) => Ok(Combination::Straight(high_card)),
+        (None, Some(high_card)) => Ok(Combination::Flush(high_card)),
+        (Some(_), Some(flush_high_card)) => match flush_high_card.value {
+            DeckCard::Ace => Ok(Combination::RoyalFlush(flush_high_card.suit)),
+            _ => Ok(Combination::StraightFlush(flush_high_card))
+        },
+        (_, _) => Ok(Combination::Kicker(PlayCard::calc_highest_card(cards).value))
+    }
+}
+
+fn one_card_pair(cards: &[PlayCard]) -> Result<Combination, String> {
+    Ok(Combination::Kicker(DeckCard::Ace))
 }

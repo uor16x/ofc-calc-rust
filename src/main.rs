@@ -2,6 +2,7 @@ extern crate enum_index;
 #[macro_use]
 extern crate enum_index_derive;
 
+mod helper;
 mod poker;
 
 fn main() {
