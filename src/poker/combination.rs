@@ -58,16 +58,19 @@ impl Combination {
                 next.enum_index() - current.enum_index() == 1;
             step += 1;
         }
-        // let wheel = vec![
-        //     DeckCard::Two,
-        //     DeckCard::Three,
-        //     DeckCard::Four,
-        //     DeckCard::Five,
-        //     DeckCard::Ace
-        // ];
-        // TODO: add wheel
-        match sequence {
-            true => Some(PlayCard::calc_highest_card(&cards).value),
+        let wheel = vec![
+            DeckCard::Two,
+            DeckCard::Three,
+            DeckCard::Four,
+            DeckCard::Five,
+            DeckCard::Ace
+        ];
+        let is_wheel = wheel.eq(&values);
+        match sequence && is_wheel {
+            true => match is_wheel {
+                true => Some(*values.get(wheel.len() - 2).unwrap()),
+                false => Some(PlayCard::calc_highest_card(&cards).value),
+            },
             false => None
         }
     }
@@ -147,7 +150,7 @@ fn multiple_cards_pairs(pairs: HashMap<DeckCard, u8>, cards_len: usize) -> Resul
         5 => {
             let counter_sum = pairs
                 .iter()
-                .fold(|acc, (_, &counter)| acc + counter);
+                .fold(0, |acc, (_, &counter)| acc + counter);
             match counter_sum {
                 4 => {
                     let pair1 = collection::hashmap_key_max_by_value(&pairs);
@@ -155,21 +158,15 @@ fn multiple_cards_pairs(pairs: HashMap<DeckCard, u8>, cards_len: usize) -> Resul
                     Ok(Combination::TwoPairs { pair1: *pair1, pair2: *pair2 })
                 },
                 5 => {
-                    let double_deck_card = pairs
-                        .iter()
-                        .filter(|&(_, &y)| y == 2)
-                        .map(|(key, _)| key)
-                        .next()
-                        .unwrap();
-                    let triple_deck_card = pairs
-                        .iter()
-                        .filter(|&(_, &y)| y == 3)
-                        .map(|(key, _)| key)
-                        .next()
-                        .unwrap();
+                    let triple = collection::hashmap_get_key_by_value(
+                        &pairs, 3
+                    ).unwrap();
+                    let double = collection::hashmap_get_key_by_value(
+                        &pairs, 2
+                    ).unwrap();
                     Ok(Combination::FullHouse {
-                        triple: *triple_deck_card,
-                        double: *double_deck_card
+                        triple,
+                        double
                     })
                 },
                 _ => Err(String::from("Invalid pair counter sum"))

@@ -10,7 +10,8 @@ const CARD_NOTATION: [char; 13] = [
 #[derive(
     Debug, Clone, Copy,
     PartialEq, Eq, Hash,
-    EnumIndex, IndexEnum
+    EnumIndex, IndexEnum,
+    Ord, PartialOrd
 )]
 pub enum DeckCard {
     Two,
