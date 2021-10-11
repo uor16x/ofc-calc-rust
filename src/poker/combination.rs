@@ -3,7 +3,6 @@ use crate::poker::cards::deck_card::DeckCard;
 use crate::poker::cards::play_card::PlayCard;
 use crate::poker::cards::suit::Suit;
 use crate::enum_index::EnumIndex;
-use crate::poker::combination::Combination::Flush;
 
 #[derive(Debug)]
 pub enum Combination {
@@ -95,29 +94,14 @@ impl Combination {
                 let straight = Combination::check_straight(&cards);
                 let flush = Combination::check_flush(&cards);
                 match (straight, flush) {
-                    (_, _) => Ok(Flush(PlayCard{suit:Suit::Spades, value: DeckCard::Ace}))
+                    (Some(high_card), None) => Ok(Combination::Straight(high_card)),
+                    (None, Some(high_card)) => Ok(Combination::Flush(high_card)),
+                    (Some(_), Some(flush_high_card)) => match flush_high_card.value {
+                        DeckCard::Ace => Ok(Combination::RoyalFlush(flush_high_card.suit)),
+                        _ => Ok(Combination::StraightFlush(flush_high_card))
+                    },
+                    (_, _) => Ok(Combination::Kicker(PlayCard::calc_highest_card(cards)))
                 }
-
-                // match Combination::check_flush(&cards) {
-                //     true => {
-                //         let card = cards
-                //             .iter()
-                //             .max_by(
-                //                 |
-                //                     &card1,
-                //                     &card2
-                //                 |
-                //                     card1.value.enum_index().cmp(
-                //                         &card2.value.enum_index()
-                //                     )
-                //             )
-                //             .unwrap();
-                //         Ok(Combination::Flush(*card))
-                //     }
-                //     false => {
-                //         Ok(Combination::Straight(DeckCard::Ace))
-                //     }
-                // }
             },
             1 => {
                 let deck_card = pairs
