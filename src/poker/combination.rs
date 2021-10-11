@@ -3,6 +3,7 @@ use crate::poker::cards::deck_card::DeckCard;
 use crate::poker::cards::play_card::PlayCard;
 use crate::poker::cards::suit::Suit;
 use crate::enum_index::EnumIndex;
+use crate::poker::combination::Combination::Flush;
 
 #[derive(Debug)]
 pub enum Combination {
@@ -19,17 +20,24 @@ pub enum Combination {
 }
 
 impl Combination {
-    fn check_flush(cards: &[PlayCard]) -> bool {
-        cards.len() == 5 &&
+    fn check_flush(cards: &[PlayCard]) -> Option<PlayCard> {
+        let is_flash = cards.len() == 5 &&
             cards.iter().all(
                 |card|
                     &card.suit.to_string() == &cards[0].suit.to_string()
-            )
+            );
+        match is_flash {
+            true => {
+                let highest_card = PlayCard::calc_highest_card(&cards);
+                Some(highest_card)
+            }
+            false => None
+        }
     }
 
-    fn check_straight(cards: &[PlayCard]) -> bool {
+    fn check_straight(cards: &[PlayCard]) -> Option<DeckCard> {
         if cards.len() != 5 {
-            return false
+            return None
         }
 
         let mut values = cards
@@ -61,7 +69,13 @@ impl Combination {
         //     DeckCard::Ace
         // ];
         // TODO: add wheel
-        return sequence;
+        match sequence {
+            true => {
+                let highest_card = PlayCard::calc_highest_card(&cards);
+                Some(highest_card.value)
+            }
+            false => None
+        }
     }
 
     fn get_pairs(cards: &[PlayCard]) -> HashMap<DeckCard, u8> {
@@ -81,29 +95,35 @@ impl Combination {
         if cards.len() < 3 || cards.len() > 5 {
             return Err(String::from("Invalid number of cards passed"))
         }
-        // TODO: check straight
-        // let is_str = Combination::check_straight(&cards);
         let pairs = Combination::get_pairs(&cards);
         return match pairs.len() {
             0 => {
-                match Combination::check_flush(&cards) {
-                    true => {
-                        let card = cards
-                            .iter()
-                            .max_by(
-                                |
-                                    &card1,
-                                    &card2
-                                |
-                                    card1.value.enum_index().cmp(
-                                        &card2.value.enum_index()
-                                    )
-                            )
-                            .unwrap();
-                        Ok(Combination::Flush(*card))
-                    }
-                    false => Ok(Combination::Straight(DeckCard::Ace))
+                let straight = Combination::check_straight(&cards);
+                let flush = Combination::check_flush(&cards);
+                match (straight, flush) {
+                    (_, _) => Ok(Flush(PlayCard{suit:Suit::Spades, value: DeckCard::Ace}))
                 }
+
+                // match Combination::check_flush(&cards) {
+                //     true => {
+                //         let card = cards
+                //             .iter()
+                //             .max_by(
+                //                 |
+                //                     &card1,
+                //                     &card2
+                //                 |
+                //                     card1.value.enum_index().cmp(
+                //                         &card2.value.enum_index()
+                //                     )
+                //             )
+                //             .unwrap();
+                //         Ok(Combination::Flush(*card))
+                //     }
+                //     false => {
+                //         Ok(Combination::Straight(DeckCard::Ace))
+                //     }
+                // }
             },
             1 => {
                 let deck_card = pairs

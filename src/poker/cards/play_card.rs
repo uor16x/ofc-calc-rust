@@ -1,5 +1,6 @@
 use crate::poker::cards::deck_card::DeckCard;
 use crate::poker::cards::suit::Suit;
+use enum_index::{EnumIndex, IndexEnum};
 
 #[derive(Debug, Clone, Copy)]
 pub struct PlayCard {
@@ -25,5 +26,21 @@ impl PlayCard {
             suit,
         };
         Ok(result)
+    }
+
+    pub fn calc_highest_card(cards: &[PlayCard]) -> PlayCard {
+        cards
+            .iter()
+            .max_by(
+                |
+                    &card1,
+                    &card2
+                |
+                    card1.value.enum_index().cmp(
+                        &card2.value.enum_index()
+                    )
+            )
+            .map(|&card| card)
+            .unwrap()
     }
 }
